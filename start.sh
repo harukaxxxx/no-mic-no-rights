@@ -26,8 +26,9 @@ cd ..
 echo ""
 echo "Starting server..."
 IP=$(ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
-echo "Access the web interface at: http://${IP}:8000"
-echo "Or: http://localhost:8000"
+PORT=$(grep '^PORT=' .env 2>/dev/null | cut -d= -f2 || echo "8000")
+echo "Access the web interface at: http://${IP}:${PORT}"
+echo "Or: http://localhost:${PORT}"
 echo ""
 
 uv run python -m backend.main

@@ -6,14 +6,12 @@ import './style.css'
 
 import PlayView from './views/PlayView.vue'
 import ManageView from './views/ManageView.vue'
-import SettingsView from './views/SettingsView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: PlayView },
     { path: '/manage', component: ManageView },
-    { path: '/settings', component: SettingsView },
   ],
 })
 

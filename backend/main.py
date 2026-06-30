@@ -6,22 +6,21 @@ from fastapi.responses import FileResponse
 from pathlib import Path
 import uvicorn
 from backend.database import init_db
-from backend.api import router as api_router
+from backend.api import router as api_router, backfill_file_hashes
 from backend.bot import start_bot, stop_bot, player
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class AppSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     host: str = "0.0.0.0"
     port: int = 8000
-    
-    class Config:
-        env_file = ".env"
 
 app_settings = AppSettings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await backfill_file_hashes()
     bot_task = asyncio.create_task(start_bot())
     yield
     await stop_bot()

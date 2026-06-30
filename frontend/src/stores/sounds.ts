@@ -9,16 +9,28 @@ export interface Sound {
   category: string
   tags: string
   cover_image: string | null
-  shortcut_key: string | null
   is_pinned: boolean
   play_count: number
+  volume: number
+  file_hash: string | null
   created_at: string
+}
+
+export interface UploadResult {
+  duplicate?: boolean
+  existing_sound?: Sound
+  file_hash?: string
+  id?: number
 }
 
 export const useSoundsStore = defineStore('sounds', () => {
   const sounds = ref<Sound[]>([])
   const loading = ref(false)
   const currentPlaying = ref<Sound | null>(null)
+  const error = ref<string | null>(null)
+  const success = ref<string | null>(null)
+  const previewingId = ref<number | null>(null)
+  let previewAudio: HTMLAudioElement | null = null
 
   async function fetchSounds() {
     loading.value = true
@@ -37,13 +49,14 @@ export const useSoundsStore = defineStore('sounds', () => {
       await axios.post(`/api/sounds/${sound.id}/play`)
       currentPlaying.value = sound
       sound.play_count++
-    } catch (error) {
-      console.error('Failed to play sound:', error)
-      alert('播放失敗：' + (error.response?.data?.detail || '未知錯誤'))
+      error.value = null
+    } catch (err: any) {
+      error.value = err.response?.data?.detail || '播放失敗'
+      setTimeout(() => { error.value = null }, 3000)
     }
   }
 
-  async function uploadSound(file: File, name: string, category: string = '', tags: string = '') {
+  async function uploadSound(file: File, name: string, category: string = '', tags: string = ''): Promise<UploadResult> {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('name', name)
@@ -54,10 +67,31 @@ export const useSoundsStore = defineStore('sounds', () => {
       const response = await axios.post('/api/sounds', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
-      sounds.value.push(response.data)
+      if (!response.data.duplicate) {
+        sounds.value.push(response.data)
+      }
       return response.data
     } catch (error) {
       console.error('Failed to upload sound:', error)
+      throw error
+    }
+  }
+
+  async function overwriteSound(fileHash: string): Promise<Sound> {
+    const formData = new FormData()
+    formData.append('file_hash', fileHash)
+    
+    try {
+      const response = await axios.post('/api/sounds/overwrite', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      const index = sounds.value.findIndex(s => s.id === response.data.id)
+      if (index !== -1) {
+        sounds.value[index] = response.data
+      }
+      return response.data
+    } catch (error) {
+      console.error('Failed to overwrite sound:', error)
       throw error
     }
   }
@@ -86,14 +120,53 @@ export const useSoundsStore = defineStore('sounds', () => {
     }
   }
 
+  function showSuccess(message: string) {
+    success.value = message
+    setTimeout(() => { success.value = null }, 3000)
+  }
+
+  function startPreview(sound: Sound) {
+    if (previewAudio) {
+      previewAudio.pause()
+      previewAudio = null
+    }
+    
+    if (previewingId.value === sound.id) {
+      previewingId.value = null
+      return
+    }
+    
+    previewAudio = new Audio(`/api/sounds/${sound.id}/preview`)
+    previewAudio.volume = Math.min(sound.volume ?? 1, 1)
+    previewAudio.onended = () => { previewingId.value = null }
+    previewAudio.onerror = () => { previewingId.value = null }
+    previewAudio.play()
+    previewingId.value = sound.id
+  }
+
+  function stopPreview() {
+    if (previewAudio) {
+      previewAudio.pause()
+      previewAudio = null
+    }
+    previewingId.value = null
+  }
+
   return {
     sounds,
     loading,
     currentPlaying,
+    error,
+    success,
+    previewingId,
     fetchSounds,
     playSound,
     uploadSound,
+    overwriteSound,
     updateSound,
     deleteSound,
+    showSuccess,
+    startPreview,
+    stopPreview,
   }
 })

@@ -16,7 +16,7 @@
 
     <div v-if="pinnedSounds.length" class="mb-8">
       <h2 class="text-xl font-bold mb-4">釘選音效</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
         <SoundCard 
           v-for="sound in pinnedSounds" 
           :key="sound.id" 
@@ -28,7 +28,7 @@
 
     <div>
       <h2 class="text-xl font-bold mb-4">所有音效</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
         <SoundCard 
           v-for="sound in filteredSounds" 
           :key="sound.id" 
@@ -38,12 +38,12 @@
       </div>
     </div>
 
-    <NowPlaying :current-playing="store.currentPlaying" />
+    <NowPlaying :current-playing="store.currentPlaying" :error="store.error" :success="store.success" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useSoundsStore, Sound } from '../stores/sounds'
 import SoundCard from '../components/SoundCard.vue'
 import NowPlaying from '../components/NowPlaying.vue'
@@ -67,11 +67,11 @@ const filteredSounds = computed(() => {
   }
   
   if (sortBy.value === 'name') {
-    result.sort((a, b) => a.name.localeCompare(b.name))
+    result = [...result].sort((a, b) => a.name.localeCompare(b.name))
   } else if (sortBy.value === 'play_count') {
-    result.sort((a, b) => b.play_count - a.play_count)
+    result = [...result].sort((a, b) => b.play_count - a.play_count)
   } else {
-    result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    result = [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }
   
   return result
@@ -81,24 +81,7 @@ function playSound(sound: Sound) {
   store.playSound(sound)
 }
 
-function handleKeydown(e: KeyboardEvent) {
-  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-    return
-  }
-  
-  const key = e.key.toLowerCase()
-  const sound = store.sounds.find(s => s.shortcut_key?.toLowerCase() === key)
-  if (sound) {
-    playSound(sound)
-  }
-}
-
 onMounted(() => {
   store.fetchSounds()
-  window.addEventListener('keydown', handleKeydown)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown)
 })
 </script>

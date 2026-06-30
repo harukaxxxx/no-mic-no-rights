@@ -9,6 +9,7 @@ Discord 音效機器人，透過網頁介面管理並播放音效。
 - 自動跟隨指定使用者進出語音頻道
 - 支援快捷鍵、釘選、分類、搜尋
 - 單音播放模式
+- HTTP GET 播放 API（可搭配 Stream Deck 等外部裝置觸發）
 
 ## 快速開始
 
@@ -38,6 +39,34 @@ cp .env.example .env
 ```
 
 4. 開啟瀏覽器訪問 `http://localhost:8000`
+
+## HTTP 播放 API
+
+可透過 HTTP GET 請求觸發播放，適合 Stream Deck 等外部裝置整合。
+
+### 依 ID 播放
+
+```
+GET http://localhost:{PORT}/api/play/{sound_id}
+```
+
+### 依名稱播放
+
+```
+GET http://localhost:{PORT}/api/play/name/{sound_name}
+```
+
+### 回應範例
+
+成功：
+```json
+{"message": "Playing", "sound": "休拉"}
+```
+
+失敗：
+```json
+{"error": "Bot not connected to voice channel"}
+```
 
 ## 技術棧
 

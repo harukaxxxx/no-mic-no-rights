@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float
 from sqlalchemy.sql import func
 from backend.database import Base
 
@@ -11,9 +11,10 @@ class Sound(Base):
     category = Column(String, default="")
     tags = Column(String, default="")
     cover_image = Column(String, nullable=True)
-    shortcut_key = Column(String, nullable=True)
     is_pinned = Column(Boolean, default=False)
     play_count = Column(Integer, default=0)
+    volume = Column(Float, default=1.0)
+    file_hash = Column(String, nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     order = Column(Integer, default=0)
 
