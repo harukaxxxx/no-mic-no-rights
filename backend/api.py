@@ -124,7 +124,14 @@ async def play_sound(sound_id: int, db: AsyncSession = Depends(get_db)):
     )
     await db.commit()
     
-    return {"message": "Playing", "sound": sound}
+    from backend.bot import bot, player
+    if bot.voice_clients:
+        voice_client = bot.voice_clients[0]
+        file_path = f"backend/sounds/{sound.filename}"
+        await player.play(voice_client, file_path)
+        return {"message": "Playing", "sound": sound}
+    else:
+        raise HTTPException(status_code=400, detail="Bot not connected to voice channel")
 
 @router.get("/api/settings")
 async def get_settings(db: AsyncSession = Depends(get_db)):

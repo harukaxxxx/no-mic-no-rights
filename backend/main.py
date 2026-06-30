@@ -7,6 +7,7 @@ from pathlib import Path
 import uvicorn
 from backend.database import init_db
 from backend.api import router as api_router
+from backend.bot import start_bot, stop_bot, player
 from pydantic_settings import BaseSettings
 
 class AppSettings(BaseSettings):
@@ -21,7 +22,10 @@ app_settings = AppSettings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    bot_task = asyncio.create_task(start_bot())
     yield
+    await stop_bot()
+    bot_task.cancel()
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(api_router)
